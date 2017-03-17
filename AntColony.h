@@ -25,8 +25,18 @@ class AntColony
         ~AntColony();
 
     private:
+        const float ALPHA = 1.0;        //importance of trail
+        const float BETA = 5.0;         //relative importance of visibility
+        const float RHO = 0.5;          //evaporation rate for pheromones 
+        const float QVAL = 100;         //constant used in formula
+        const int MAX_TOURS = 20;        //each ant does at most 20 tours
+
+
         int maxCities;                  //# of cities
         int maxAnts;                    //# of ants
+        int maxTime;                    //to stop ants if they're taking too long
+        float initPhero;                  //initial weight of edges
+
         ant* antArray;                  //store the ant structs
         city* cityArray;                //store the city structs
         //TODO: change distances to double
@@ -34,13 +44,14 @@ class AntColony
         double** pheroConcentration;    //pheromone concentrations b/w cities
         double best;
         int bestIndex;
+        
         void resetAnts();
-        double antResult(int, int);
+        double antProd(int, int);
         int nextCity(int);
         int antSim();
         void updateTrails();
         void writeData(int);
-        void writeDataForPython(int);
+        void writeDataForPython();
 };
 
 
