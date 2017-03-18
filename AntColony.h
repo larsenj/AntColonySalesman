@@ -21,7 +21,10 @@ class AntColony
     public:
         //constructor
         AntColony(std::vector< std::vector<int> >);
-        void run(bool);
+        void run();
+        void writeData(std::string);
+        void writeDataForPython();
+        int maxCities;                  //# of cities
         ~AntColony();
 
     private:
@@ -32,16 +35,17 @@ class AntColony
         const int MAX_TOURS = 20;        //each ant does at most 20 tours
 
 
-        int maxCities;                  //# of cities
         int maxAnts;                    //# of ants
         int maxTime;                    //to stop ants if they're taking too long
-        float initPhero;                  //initial weight of edges
+        double initPhero;                  //initial weight of edges
 
         ant* antArray;                  //store the ant structs
         city* cityArray;                //store the city structs
         //TODO: change distances to double
-        int** distances;             //distances b/w cities
-        double** pheroConcentration;    //pheromone concentrations b/w cities
+        std::vector< std::vector<int> > distances;  //distances b/w cities
+        //int** distances;                            //distances b/w cities
+        std::vector< std::vector<double> >  pheroConcentration;    //pheromone concentrations b/w cities
+        //double** pheroConcentration;    //pheromone concentrations b/w cities
         double best;
         int bestIndex;
         
@@ -50,8 +54,6 @@ class AntColony
         int nextCity(int);
         int antSim();
         void updateTrails();
-        void writeData(int);
-        void writeDataForPython();
 };
 
 

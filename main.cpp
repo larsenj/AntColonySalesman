@@ -27,7 +27,9 @@ int main(int argc, char* argv[])
     if (argc == 3)
         if( std::strcmp(argv[2], "-time") == 0 )
             timed = true;
-        
+    
+    bool python = false;
+
     //if tracking the running time, get the start time
     clock_t begin, end;
     if(timed)
@@ -37,7 +39,6 @@ int main(int argc, char* argv[])
     std::string fileName = std::string(argv[1]);
     //create a vector of vectors using the cmd line arg file name
     std::vector< std::vector<int> > inputData = getCities(fileName);
-    
 /*
     //test that the file inputs were read in properly
     for (int i = 0; i < inputData.size(); i++)
@@ -47,9 +48,12 @@ int main(int argc, char* argv[])
         std::cout << std::endl;
     }
 */
-
+//    std::cout << "main@1" << std::endl;
     AntColony AC(inputData);
+//    std::cout << "main@2" << std::endl;
 
+    AC.run();
+//    std::cout << "main@3" << std::endl;
 
     //if tracking the running time, get the ending time and output the result
     if(timed)
@@ -58,6 +62,13 @@ int main(int argc, char* argv[])
         double seconds = double(end - begin) / CLOCKS_PER_SEC;
         std::cout << "Time taken: " << seconds << " seconds." << std::endl;
     }
+//    std::cout << "main@4" << std::endl;
+
+    AC.writeData(fileName);
+//    std::cout << "main@5" << std::endl;
+    if(python)
+        AC.writeDataForPython();
+        
 
 
 }//end main
