@@ -3,7 +3,7 @@
 #include <fstream>
 #include <ctime>
 #include <cstring>
-#include <chrono>
+#include <cstdio>
 
 #include "AntColony.h"
 
@@ -12,52 +12,56 @@ std::vector< std::vector<int> > getCities(std::string);
 int main(int argc, char* argv[])
 {
 
-    //check for correct number of args - the input file name and if an option 
-    //is present
-    if (argc < 2 || argc > 3)
-    {
-        std::cerr << "Usage: " << argv[0] << " [FILE]... [OPTION]...\n" 
-            << "Options:\n"
-            << "\t-time\t\tOutput the running time of the program." 
-            << std::endl;
-        return 1;
-    } 
-
     //check is the program should track the running time
-    bool timed = false;
-    if (argc == 3)
-        if( std::strcmp(argv[2], "-time") == 0 )
-            timed = true;
-    
+    bool timed = true;
     bool python = false;
 
     //if tracking the running time, get the start time
-    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-    //clock_t begin, end;
-    //if(timed)
-        //begin = clock();
+    clock_t begin, end;
+    if(timed)
+        begin = clock();
 
     //save the name of the input file into a string
     std::string fileName = std::string(argv[1]);
     //create a vector of vectors using the cmd line arg file name
     std::vector< std::vector<int> > inputData = getCities(fileName);
+    printf("main@1");
     AntColony AC(&inputData);
-    AC.run();
+
+    srand(time(NULL));
+
+//    std::cout << "Testing antProd()" << std::endl;
+//    printf("%e ", AC.antProd(0,0));
+    /*    for (int i = 0; i < inputData.size() ; i++)
+    {
+        int x = i;
+        int y = inputData.size() - i;
+        printf("%e ", AC.antProd(x,y));
+//        std::cout << AC.antProd(x, y) << std::endl;
+
+    }
+*/
+
+    printf("Testing next city\n");
+    int aamax = AC.antArray.size();
+    for(int i = 0; i < aamax; i++)
+        AC.nextCity(i);
+
+
 
     //if tracking the running time, get the ending time and output the result
     if(timed)
     {
-        std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-        std::cout << "Time taken: " << time_span.count() << " seconds" << std::endl;
-        //end = clock();
-        //double seconds = double(end - begin) / CLOCKS_PER_SEC;
-        //std::cout << "Time taken: " << seconds << " seconds." << std::endl;
+        end = clock();
+        double seconds = double(end - begin) / CLOCKS_PER_SEC;
+        std::cout << "Time taken: " << seconds << " seconds." << std::endl;
     }
+
+/*
     AC.writeData(fileName);
     if(python)
         AC.writeDataForPython();
-        
+*/        
 
 
 }//end main
@@ -87,12 +91,12 @@ std::vector< std::vector<int> > getCities(std::string fileName)
     }
 
     std::vector< std::vector<int> > inputData;  //main vector
-
     //input each line in the file
     int city, x, y;
     while(inFile >> city >> x >> y)
     {
         std::vector<int> readIn; //temporary vector
+        printf("%i ",city);
         readIn.push_back(city);
         readIn.push_back(x);
         readIn.push_back(y);
@@ -100,6 +104,7 @@ std::vector< std::vector<int> > getCities(std::string fileName)
         //add the temporary vector to the main one
         inputData.push_back(readIn);
     }
+    printf("f@end\n");
     inFile.close();
     return inputData;
 }
