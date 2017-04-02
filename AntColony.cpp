@@ -1,38 +1,32 @@
 #include <iostream>
-#include <cmath>
 #include <cassert>
-#include <atomic>
 #include <fstream>
 #include <cstdio>
 #include <thread>
-#include <functional>
 
 #include "AntColony.h"
-
-using namespace std;
 
 //constructor initializes the ant and city arrays and populated the distances matrix 
 AntColony::AntColony(std::vector< std::vector<int> >* cities)
 {
-    //allocate cities, ants and part of distances arrays 
+    //allocate cities and ants  
     maxCities = cities->size();
     if (maxCities < MAX_ANTS)
         maxAnts = maxCities;
     else
         maxAnts = MAX_ANTS;
-//    cityArray = new city[maxCities];
     cityArray.resize(maxCities);
-//    antArray = new ant[maxAnts];
     antArray.resize(maxAnts);
+    
     //fill in some of the other variables
     maxTime = MAX_TOURS * maxCities; 
     initPhero = 1.0 / maxCities;
     distances.resize(maxCities, std::vector<double>(maxCities, 0));
     pheroConcentration.resize(maxCities, std::vector<double>(maxCities, initPhero));
     
+    //assign city data
     for(int i = 0; i < maxCities; i++)
     {
-        //assign city data
         cityArray[i].id = (*cities)[i][0];
         cityArray[i].x = (*cities)[i][1];
         cityArray[i].y = (*cities)[i][2];
@@ -40,34 +34,14 @@ AntColony::AntColony(std::vector< std::vector<int> >* cities)
 
     std::vector<std::thread> antThreads(maxAnts); 
     
-    
-    for(int i = 0; i < maxAnts; i++)
-    {
-        antThreads[i] = std::thread(&AntColony::constructorThreads, this, i , std::ref(maxCities), std::ref(cities));
-//void AntColony::constructorThreads(int i, int maxCities, std::vector< std::vector<int> >* cities)
-//        {
-/*            antArray[i].curr = (*cities)[i][0];
-            antArray[i].citiesVisited = new int[maxCities];
-            antArray[i].path = new int[maxCities];
-            antArray[i].pathIndex = 1;
-            antArray[i].next = -1;
-            antArray[i].tourLength = 0;
-
-            //init values for cities visited and path arrays
-            for(int k = 0; k < maxCities; k++)
-            {
-                antArray[i].citiesVisited[k] = 0;
-                antArray[i].path[k] = -1;
-            }
-
-            //first path item is the current city;
-            antArray[i].path[0] = antArray[i].curr;
-
-            //load first city into the citiesVisited list
-            antArray[i].citiesVisited[antArray[i].curr] = 1;
-//        });     */   
-    }
-
+    //create threads to help initialize all the values    
+    for(int i = 1; i < maxAnts; i++)
+        antThreads[i] = std::thread(&AntColony::constructorThreads, this, i, 
+            std::ref(maxCities), std::ref(cities));
+        
+    antThreads[0] = std::thread(&AntColony::constructorThreads, this, 0, 
+            std::ref(maxCities), std::ref(cities));
+   
     for(int i = 0; i < maxAnts; i++)
         antThreads[i].join(); 
 
@@ -136,7 +110,7 @@ void AntColony::run()
             updateTrails();
             if(currTic != maxTime)
                 resetAnts();
-            std::cout << "currTic: " << currTic << " Best: " << best << std::endl;
+            printf("currTic: %d Best: %f\n", currTic, best); 
         }
     }
 
@@ -173,17 +147,6 @@ void AntColony::resetAnts()
     }
 }
 
-//gives distance as a function of concentration of pheromones and visibility
-double AntColony::antProd(int source, int destination)
-{
-    double x = pow(pheroConcentration[source][destination], ALPHA);
-    double y = pow( 1.0/distances[source][destination], BETA);
-//    cout << "x: " << x << " y: " << y <<  " distances: " << distances[source][destination] << endl;
-    return x*y;
-
-}
-
-
 //function for randomly determining the next city to visit, using probability
 //and the equation provided by the antProd(int, int) function above.
 int AntColony::nextCity(int ant)
@@ -200,7 +163,6 @@ int AntColony::nextCity(int ant)
         }
     }
     assert( denom != 0.0);
-    
     
     do
     {
@@ -232,10 +194,7 @@ int AntColony::antSim()
     //create the thread vector
     std::vector<std::thread> antThreads(maxAnts); 
 
-    //use this value for the threads so can have one left for the main thread 
-    int max = maxAnts-1;
-
-    for(int i = 0; i < max; i++)
+    for(int i = 1; i < maxAnts; i++)
         //using a lambda function for the thread constructor, passing into it i,
         //a reference to the atomic int to increment, and the class object.
         //Downside is code gets repeated for the main thread.
@@ -260,36 +219,37 @@ int AntColony::antSim()
 
     //main thread does work too
     //verify of more cities left to visit
-    if(antArray[max].pathIndex < maxCities)
+    if(antArray[0].pathIndex < maxCities)
     {
-        antArray[max].next = nextCity(max); //get a new next city
-        antArray[max].citiesVisited[antArray[max].next] = 1; //label it as visited
-        antArray[max].path[antArray[max].pathIndex++] = antArray[max].next; //make it the nex one on the path
-        antArray[max].tourLength += distances[antArray[max].curr][antArray[max].next];
+        antArray[0].next = nextCity(0); //get a new next city
+        antArray[0].citiesVisited[antArray[0].next] = 1; //label it as visited
+        antArray[0].path[antArray[0].pathIndex++] = antArray[0].next; //make it the nex one on the path
+        antArray[0].tourLength += distances[antArray[0].curr][antArray[0].next];
 
         //handle last case: going back to starting point
-        if(antArray[max].curr == maxCities)
-            antArray[max].tourLength += distances[antArray[max].path[maxCities - 1]]
-                [antArray[max].path[0]];
+        if(antArray[0].curr == maxCities)
+            antArray[0].tourLength += distances[antArray[0].path[maxCities - 1]]
+                [antArray[0].path[0]];
 
-        antArray[max].curr = antArray[max].next;
+        antArray[0].curr = antArray[0].next;
         moving++;
     }
 
-    //for(int i = 0; i < maxAnts; i++)
-    for(int i = 0; i < max; i++)
-        antThreads[i].join();
+    for(int i = 1; i < maxAnts; i++)
+        antThreads[i].join();//sometimes freezes here
 
     return moving;
 }
 
+//multithreaded version of the ant sim - moves ants along path, tracking cities
+//visited and total length traveled 
 void AntColony::antSimThreaded(int i, std::atomic<int> moving)
 {
             if(antArray[i].pathIndex < maxCities)
             {
                 antArray[i].next = nextCity(i); //get a new next city
                 antArray[i].citiesVisited[antArray[i].next] = 1; //label it as visited
-                antArray[i].path[antArray[i].pathIndex++] = antArray[i].next; //make it the nex one on the path
+                antArray[i].path[antArray[i].pathIndex++] = antArray[i].next; //make it the next one on the path
                 antArray[i].tourLength += distances[antArray[i].curr][antArray[i].next];
 
                 //handle last case: going back to starting point
@@ -302,6 +262,7 @@ void AntColony::antSimThreaded(int i, std::atomic<int> moving)
             }
 }
 
+//updates the laying and the evaporation of pheromones along trails
 void AntColony::updateTrails()
 {
     int source, dest;
@@ -340,16 +301,17 @@ void AntColony::updateTrails()
         }
     }
 
+    //evaporate again to account for new trail evaporation
     for(int m = 0; m < maxCities; m++)
         for(int n = 0; n < maxCities; n++)
             pheroConcentration[m][n] *= RHO;
 }
 
 //write the data
-void AntColony::writeData(string fileName)
+void AntColony::writeData(std::string fileName)
 {
     fileName = fileName + ".tour";
-    cout << "fileName: " << fileName << endl;
+    std::cout << "fileName: " << fileName << std::endl;
     //check if file can be opened
     std::ofstream outFile(fileName.c_str());
     std::string s = "Cannot open " + fileName;
@@ -373,7 +335,7 @@ void AntColony::writeData(string fileName)
 //"A Positronic Brain" blog
 void AntColony::writeDataForPython()
 {
-    ofstream f1;
+    std::ofstream f1;
     f1.open("Data.txt");
     ant bestAnt = antArray[bestIndex];
     
@@ -394,7 +356,5 @@ AntColony::~AntColony()
         delete [] antArray[i].citiesVisited;
         delete [] antArray[i].path;
     }
-//    delete [] antArray;
-//    delete [] cityArray;
 }
 

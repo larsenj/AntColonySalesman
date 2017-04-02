@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <atomic>
+#include <cmath>
 
 struct ant
 {
@@ -25,17 +26,7 @@ class AntColony
         void run();
         void writeData(std::string);
         void writeDataForPython();
-        int maxCities;                  //# of cities
         ~AntColony();
-
-        void resetAnts();
-        double antProd(int, int);
-        int nextCity(int);
-        int antSim();
-        void updateTrails();
-        void antSimThreaded(int, std::atomic<int>);
-        void constructorThreads(int, int, std::vector< std::vector<int> >*); 
-        std::vector<ant> antArray;                  //store the ant structs
 
     private:
         const float ALPHA = 1.0;        //importance of trail
@@ -48,21 +39,27 @@ class AntColony
         int maxAnts;                    //# of ants
         int maxTime;                    //to stop ants if they're taking too long
         double initPhero;                  //initial weight of edges
-
-        //ant* antArray;                  //store the ant structs
-//        std::vector<ant> antArray;                  //store the ant structs
-        //city* cityArray;                //store the city structs
         std::vector<city> cityArray;                //store the city structs
+        std::vector<ant> antArray;                  //store the ant structs
         std::vector< std::vector<double> > distances;  //distances b/w cities
         std::vector< std::vector<double> > pheroConcentration;    //pheromone concentrations b/w cities
         double best;
         int bestIndex;
+        int maxCities;                  //# of cities
+
+        void resetAnts();
+        int nextCity(int);
+        int antSim();
+        void updateTrails();
+        void antSimThreaded(int, std::atomic<int>);
+        void constructorThreads(int, int, std::vector< std::vector<int> >*); 
         
-//        void resetAnts();
-//        double antProd(int, int);
-//        int nextCity(int);
-//        int antSim();
-//        void updateTrails();
+        inline double antProd(int source, int destination)
+        {
+            double x = pow(pheroConcentration[source][destination], ALPHA);
+            double y = pow( 1.0/distances[source][destination], BETA);
+            return x*y;
+        };
 };
 
 

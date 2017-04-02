@@ -1,13 +1,12 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include <ctime>
 #include <cstring>
 #include <chrono>
 
 #include "AntColony.h"
 
-std::vector< std::vector<int> > getCities(std::string);
+void getCities(std::string, std::vector< std::vector<int> >*);
 
 int main(int argc, char* argv[])
 {
@@ -23,7 +22,7 @@ int main(int argc, char* argv[])
         return 1;
     } 
 
-    //check is the program should track the running time
+    //check if the program should track the running time
     bool timed = false;
     if (argc == 3)
         if( std::strcmp(argv[2], "-time") == 0 )
@@ -31,16 +30,18 @@ int main(int argc, char* argv[])
     
     bool python = false;
 
-    //if tracking the running time, get the start time
-    std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-    //clock_t begin, end;
-    //if(timed)
-        //begin = clock();
+    //if tracking the running time, get the start time. Using std::chrono
+    //because clock_t will give bad results with multithreading
+    std::chrono::high_resolution_clock::time_point start = 
+        std::chrono::high_resolution_clock::now();
 
     //save the name of the input file into a string
     std::string fileName = std::string(argv[1]);
     //create a vector of vectors using the cmd line arg file name
-    std::vector< std::vector<int> > inputData = getCities(fileName);
+    std::vector< std::vector<int> > inputData;
+    getCities(fileName, &inputData);
+    
+    //instantiate the antcolony class and run the simulation
     AntColony AC(&inputData);
     AC.run();
 
@@ -50,11 +51,11 @@ int main(int argc, char* argv[])
         std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
         std::cout << "Time taken: " << time_span.count() << " seconds" << std::endl;
-        //end = clock();
-        //double seconds = double(end - begin) / CLOCKS_PER_SEC;
-        //std::cout << "Time taken: " << seconds << " seconds." << std::endl;
     }
+
     AC.writeData(fileName);
+    
+    //TODO
     if(python)
         AC.writeDataForPython();
         
@@ -72,7 +73,7 @@ int main(int argc, char* argv[])
  * the result will be a vector where each vector within it contains those 3
  * elements, in order.
  */
-std::vector< std::vector<int> > getCities(std::string fileName)
+void getCities(std::string fileName, std::vector< std::vector<int> >* inputData)
 {
 
     //check if file can be opened
@@ -86,8 +87,6 @@ std::vector< std::vector<int> > getCities(std::string fileName)
         throw s;
     }
 
-    std::vector< std::vector<int> > inputData;  //main vector
-
     //input each line in the file
     int city, x, y;
     while(inFile >> city >> x >> y)
@@ -98,9 +97,7 @@ std::vector< std::vector<int> > getCities(std::string fileName)
         readIn.push_back(y);
 
         //add the temporary vector to the main one
-        inputData.push_back(readIn);
+        inputData->push_back(readIn);
     }
     inFile.close();
-    return inputData;
 }
-
